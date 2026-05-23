@@ -400,13 +400,13 @@ body.colorful button {
             <div id="itensList"></div>
 
 <label for="valor">Valor Brigadeiros:</label>
-<input type="text" id="valor" readonly>
+<input type="text" id="valor">
 
 <label for="valorFrete">Custo Frete:</label>
 <input type="text" id="valorFrete">
 
 <label for="valorTotal">Valor Total:</label>
-<input type="text" id="valorTotal" readonly>
+<input type="text" id="valorTotal">
 
 <label for="observacoes">Observações:</label>
 <textarea id="observacoes"></textarea>
@@ -880,6 +880,7 @@ function tentarFallbackCopy(texto, resolve, reject) {
         resolve(false);
     }
 }
+
 function sendWhatsApp() {
     // ===== VALIDAÇÃO: Verificar se tem itens =====
     if (!itens || itens.length === 0) {
@@ -1064,7 +1065,216 @@ if (isMobile) {
 });
 }
 
-// FORA da função, adicione o listener:
+// ===== LISTENER ÚNICO PARA EDIÇÃO =====
+window.addEventListener('message', function(event) {
+    console.log('Mensagem recebida:', event.data);
+    var data = event.data;
+    if (!data || !data.key) return;
+    console.log('Ação: editar pedido');
+    
+    // Aguarda DOM estar pronto
+    function waitForElement() {
+        var nomeField = document.getElementById('nome');
+        if (!nomeField) {
+            console.log('Aguardando campo nome...');
+            setTimeout(waitForElement, 100);
+            return;
+        }
+        console.log('DOM pronto');
+        preencherPedido(data);
+    }
+    waitForElement();
+});
+
+function preencherPedido(data) {
+    console.log('Preenchendo pedido:', data);
+    try {
+        // Preenche campos principais
+        setFieldValue('nome', data.nome);
+        setFieldValue('telefone', data.telefone);
+        setFieldValue('dataEntrega', converterData(data.dataEntrega));
+        setFieldValue('horarioEntrega', data.horarioEntrega);
+        setFieldValue('tipoEntrega', data.tipoEntrega);
+        setFieldValue('cep', data.cep);
+        setFieldValue('endereco', data.endereco);
+        setFieldValue('numero', data.numero);
+        setFieldValue('complemento', data.complemento);
+        setFieldValue('bairro', data.bairro);
+        setFieldValue('cidade', data.cidade);
+        setFieldValue('observacoes', data.observacoes);
+        setFieldValue('statusPagamento', data.statusPagamento);
+        setFieldValue('valorPago', data.valorPago);
+        setFieldValue('valor', data.valor);
+        setFieldValue('valorFrete', data.valorFrete);
+        setFieldValue('valorTotal', data.valorTotal);
+        
+// ✅ RECONSTRÓI ITENS COM BOTÕES DE REMOVER
+if (data.itens && Array.isArray(data.itens)) {
+    const itensList = document.getElementById('itensList');
+    if (itensList) {
+        itensList.innerHTML = '';
+        data.itens.forEach((item) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'item';
+      
+      // Criar div com informações do item
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'item-info';
+      
+      const preco = item.preco || 1;
+      const subtotal = (item.quantidade || 0) * preco;
+      
+      infoDiv.innerHTML = `
+        <p><strong>${item.nome || item.sabor || 'Item'}</strong></p>
+        <p>Quantidade: ${item.quantidade || 0}</p>
+        <p>Brigadeiro: ${item.formato || 'N/A'} | Forma: ${item.tipoForma || 'N/A'} / ${item.cor || 'N/A'}</p>
+        <p><strong>Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}</strong></p>
+      `;
+      
+      // Criar botão de remover
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-remove';
+      removeBtn.textContent = 'Remover';
+      removeBtn.onclick = function(e) {
+        e.preventDefault();
+        removerItem(this);
+      };
+      
+      // Adicionar ao item
+      itemDiv.appendChild(infoDiv);
+      itemDiv.appendChild(removeBtn);
+      
+      // Adicionar à lista
+      itensList.appendChild(itemDiv);
+    });
+    
+    console.log('✅ Itens reconstruídos com botões');
+console.log('✅ Itens reconstruídos com botões');
+
+// ✅ PREENCHER VALORES
+document.getElementById('valor').value = data.valor || '';
+document.getElementById('valorFrete').value = data.valorFrete || '';
+document.getElementById('valorTotal').value = data.valor || '';
+
+// ✅ POPULAR O ARRAY itens GLOBAL
+itens = []; // Limpa o array
+data.itens.forEach((item) => {
+  itens.push({
+    sabor: item.nome || item.sabor,
+    formato: item.formato,
+    tipoForma: item.tipoForma,
+    cor: item.cor,
+    quantidade: item.quantidade,
+    preco: item.preco || 1
+  });
+});
+console.log('✅ Array itens populado:', itens);
+
+// Altera botão (esse já existe)
+var btn = document.getElementById('sendWhatsApp');
+  }
+}
+        
+        // Altera botão
+        var btn = document.getElementById('sendWhatsApp');
+        if (btn) {
+            btn.textContent = '✏️ Atualizar Pedido';
+            btn.onclick = function() { atualizarPedidoFirebase(data.key); };
+        }
+        
+        // Armazena chave
+        window.pedidoEmEdicao = data.key;
+        console.log('Pedido em edição key:', data.key);
+    } catch (error) {
+        console.error('Erro ao preencher pedido:', error);
+    }
+}
+
+function setFieldValue(id, value) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.value = value || '';
+        console.log('Campo ' + id + ' preenchido:', value);
+    } else {
+        console.warn('Campo ' + id + ' não encontrado');
+    }
+}
+
+function converterData(dataStr) {
+    if (!dataStr) return '';
+    var partes = dataStr.split('/');
+    if (partes.length === 3) {
+        return partes[2] + '-' + partes[1] + '-' + partes[0];
+    }
+    return dataStr;
+}
+
+function atualizarPedidoFirebase(key) {
+    console.log('Atualizando pedido key:', key);
+    try {
+        // Coleta dados dos campos
+        var dados = {};
+        dados.nome = getFieldValue('nome');
+        dados.telefone = getFieldValue('telefone');
+        dados.dataEntrega = getFieldValue('dataEntrega');
+        dados.horarioEntrega = getFieldValue('horarioEntrega');
+        dados.tipoEntrega = getFieldValue('tipoEntrega');
+        dados.cep = getFieldValue('cep');
+        dados.endereco = getFieldValue('endereco');
+        dados.numero = getFieldValue('numero');
+        dados.complemento = getFieldValue('complemento');
+        dados.bairro = getFieldValue('bairro');
+        dados.cidade = getFieldValue('cidade');
+        dados.observacoes = getFieldValue('observacoes');
+        dados.statusPagamento = getFieldValue('statusPagamento');
+        dados.valorPago = getFieldValue('valorPago');
+        dados.valor = getFieldValue('valor');
+        dados.valorFrete = getFieldValue('valorFrete');
+        dados.valorTotal = getFieldValue('valorTotal');
+        
+        // Coleta itens (do HTML)
+        var itensEl = document.getElementById('itensList');
+        if (itensEl) {
+            var itemsDivs = itensEl.querySelectorAll('.item');
+            var itens = [];
+            itemsDivs.forEach(function(div) {
+                itens.push({ descricao: div.textContent });
+            });
+            dados.itens = itens;
+        }
+        
+        console.log('Dados a salvar:', dados);
+        
+        // Salva no Firebase
+        var ref = firebase.database().ref('pedidos/' + key);
+        ref.set(dados, function(error) {
+            if (error) {
+                console.error('Erro ao salvar:', error);
+                alert('Erro ao atualizar pedido');
+            } else {
+                console.log('Pedido atualizado com sucesso');
+                alert('Pedido atualizado com sucesso!');
+                // Reverte botão
+                var btn = document.getElementById('sendWhatsApp');
+                if (btn) {
+                    btn.textContent = 'Enviar para WhatsApp';
+                    btn.onclick = function() { sendWhatsApp(); }; // ou função original
+                }
+                delete window.pedidoEmEdicao;
+            }
+        });
+    } catch (error) {
+        console.error('Erro em atualizarPedidoFirebase:', error);
+        alert('Erro ao atualizar pedido');
+    }
+}
+
+function getFieldValue(id) {
+    var el = document.getElementById(id);
+    return el ? el.value : '';
+}
+// Listener para o botão sendWhatsApp
 document.getElementById('sendWhatsApp').addEventListener('click', sendWhatsApp);
     </script>
 </body>
