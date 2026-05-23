@@ -107,6 +107,21 @@
             background: #128C7E;
         }
 
+        .btn-editar {
+  background-color: #FFA500; /* Laranja */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 5px;
+}
+
+.btn-editar:hover {
+  background-color: #FF8C00;
+}
+
         /* ===== LISTA DE PEDIDOS ===== */
         .pedido-card {
             background: #fff5f5;
@@ -836,11 +851,12 @@ ${pedido.statusPagamento === 'Pago Parcialmente' ? `
 ` : ''}
     </div>
 
-    <!-- BOTÕES -->
-    <div class="pedido-botoes">
-      <button class="btn-finalizar" onclick="toggleDetalhes('${pedido.key}')">ℹ️ Mais Informações</button>
-      <button class="btn-finalizar" onclick="finalizarPedido('${pedido.key}')">✓ Finalizar Pedido</button>
-    </div>
+<!-- BOTÕES -->
+<div class="pedido-botoes">
+  <button class="btn-finalizar" onclick="toggleDetalhes('${pedido.key}')">ℹ️ Mais Informações</button>
+  <button class="btn-editar" onclick="editarPedido('${pedido.key}')">✏️ Editar Pedido</button>
+  <button class="btn-finalizar" onclick="finalizarPedido('${pedido.key}')">✓ Finalizar Pedido</button>
+</div>
   `;
   lista.appendChild(div);
 });
@@ -1251,6 +1267,54 @@ function toggleDetalhes(key) {
   } else {
     detalhes.style.display = 'none';
   }
+}
+function editarPedido(key) {
+  firebase.database().ref('pedidos/' + key).once('value', (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+      alert('Pedido não encontrado!');
+      return;
+    }
+
+    console.log('Pedido encontrado:', data);
+
+    // Construir objeto com TODOS os dados
+    const pedido = {
+      acao: 'editar', // ✅ IMPORTANTE: adicionar ação
+      key: key,
+      nome: data.nome || '',
+      telefone: data.telefone || '',
+      dataEntrega: data.dataEntrega || '',
+      horarioEntrega: data.hora || '',
+      tipoEntrega: data.tipoEntrega || '',
+      cep: data.endereco?.cep || '',
+      endereco: data.endereco?.logradouro || '',
+      numero: data.endereco?.numero || '',
+      complemento: data.endereco?.complemento || '',
+      bairro: data.endereco?.bairro || '',
+      cidade: data.endereco?.cidade || '',
+      observacoes: data.observacoes || '',
+      statusPagamento: data.statusPagamento || '',
+      valorPago: data.valorPago || '',
+      itens: data.itens || [],
+      valor: data.valor || '',
+      valorFrete: data.valorFrete || ''
+    };
+
+    console.log('Dados a enviar:', pedido);
+
+    // Enviar para o iframe
+    const iframe = document.getElementById('iframe-pedidos');
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage(pedido, '*');
+    }
+
+    // Clicar na aba "Criar Pedido"
+    const botaoAba = document.querySelector('button[onclick="abrirAba(\'criar\')"]');
+    if (botaoAba) {
+      botaoAba.click();
+    }
+  });
 }
     </script>
 </body>
