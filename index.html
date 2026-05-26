@@ -803,7 +803,7 @@ if (pedido.itens && Array.isArray(pedido.itens)) {
     
     itensHTML += `
       <div class="pedido-item">
-        • <strong>${item.nome || item.sabor || 'Item'}</strong> - Qtd: ${item.quantidade}<br>
+        - <strong>${item.sabor || item.nome || 'Item'}</strong> - Qtd: ${item.quantidade || 0}<br>
         <span style="margin-left: 20px; font-size: 0.9em; color: #666;">Formato: ${detalhes}</span>
       </div>
     `;
@@ -920,7 +920,7 @@ if (pedido.itens && Array.isArray(pedido.itens)) {
     
     itensHTML += `
       <div class="pedido-item">
-        • <strong>${item.nome || item.sabor || 'Item'}</strong> - Qtd: ${item.quantidade}<br>
+        - <strong>${item.sabor || item.nome || 'Item'}</strong> - Qtd: ${item.quantidade || 0}<br>
         <span style="margin-left: 20px; font-size: 0.9em; color: #666;">Formato: ${detalhes}</span>
       </div>
     `;
@@ -1003,7 +1003,7 @@ if (pedido.itens && Array.isArray(pedido.itens)) {
     
     itensHTML += `
       <div class="pedido-item">
-        • <strong>${item.nome || item.sabor || 'Item'}</strong> - Qtd: ${item.quantidade}<br>
+        - <strong>${item.sabor || item.nome || 'Item'}</strong> - Qtd: ${item.quantidade || 0}<br>
         <span style="margin-left: 20px; font-size: 0.9em; color: #666;">Formato: ${detalhes}</span>
       </div>
     `;
