@@ -1109,72 +1109,79 @@ function preencherPedido(data) {
         setFieldValue('valorTotal', data.valorTotal);
         
 // ✅ RECONSTRÓI ITENS COM BOTÕES DE REMOVER
-if (data.itens && Array.isArray(data.itens)) {
-    const itensList = document.getElementById('itensList');
-    if (itensList) {
-        itensList.innerHTML = '';
-        data.itens.forEach((item) => {
-      const itemDiv = document.createElement('div');
-      itemDiv.className = 'item';
-      
-      // Criar div com informações do item
-      const infoDiv = document.createElement('div');
-      infoDiv.className = 'item-info';
-      
-      const preco = item.preco || 1;
-      const subtotal = (item.quantidade || 0) * preco;
-      
-      infoDiv.innerHTML = `
-        <p><strong>${item.nome || item.sabor || 'Item'}</strong></p>
-        <p>Quantidade: ${item.quantidade || 0}</p>
-        <p>Brigadeiro: ${item.formato || 'N/A'} | Forma: ${item.tipoForma || 'N/A'} / ${item.cor || 'N/A'}</p>
-        <p><strong>Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}</strong></p>
-      `;
-      
-      // Criar botão de remover
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'btn-remove';
-      removeBtn.textContent = 'Remover';
-      removeBtn.onclick = function(e) {
-        e.preventDefault();
-        removerItem(this);
-      };
-      
-      // Adicionar ao item
-      itemDiv.appendChild(infoDiv);
-      itemDiv.appendChild(removeBtn);
-      
-      // Adicionar à lista
-      itensList.appendChild(itemDiv);
-    });
-    
-    console.log('✅ Itens reconstruídos com botões');
-console.log('✅ Itens reconstruídos com botões');
-
-// ✅ PREENCHER VALORES
-document.getElementById('valor').value = data.valor || '';
-document.getElementById('valorFrete').value = data.valorFrete || '';
-document.getElementById('valorTotal').value = data.valor || '';
-
-// ✅ POPULAR O ARRAY itens GLOBAL
-itens = []; // Limpa o array
-data.itens.forEach((item) => {
+itens = []; // limpa o array global
+data.itens.forEach((item, idx) => {
+  // Popula o array PRIMEIRO
   itens.push({
-    sabor: item.nome || item.sabor,
+    sabor: item.sabor || item.nome,
     formato: item.formato,
     tipoForma: item.tipoForma,
     cor: item.cor,
     quantidade: item.quantidade,
     preco: item.preco || 1
   });
-});
-console.log('✅ Array itens populado:', itens);
 
-// Altera botão (esse já existe)
-var btn = document.getElementById('sendWhatsApp');
-  }
+  // Cria o card visual com o índice correto
+  const itemDiv = document.createElement('div');
+  itemDiv.className = 'item';
+
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'item-info';
+const precosPorSabor = {
+    'Amendoim': 1.00, 'Beijinho': 1.00, 'Brigadeiro': 1.00, 'Café': 1.00,
+    'Dois Amores': 1.00, 'Leite Ninho': 1.00, 'Moranguinho': 1.00, 'Sensação': 1.00,
+    'Chocolate Gourmet Branco': 1.20, 'Chocolate Gourmet Preto': 1.20, 'Confete': 1.20,
+    'Churros': 1.20, 'Ferrero Rocher': 1.20, 'Leite Ninho com Nutella': 1.20,
+    'Negresco': 1.20, 'Ovomaltine': 1.20, 'Prestígio': 1.20
+};
+const preco = precosPorSabor[item.sabor || item.nome] || 1.00;
+const subtotal = (item.quantidade || 0) * preco;
+
+  infoDiv.innerHTML = `
+    <p><strong>${item.sabor || item.nome || 'Item'}</strong></p>
+    <p>Quantidade: ${item.quantidade || 0}</p>
+    <p>Brigadeiro: ${item.formato || 'N/A'} | Forma: ${item.tipoForma || 'N/A'} / ${item.cor || 'N/A'}</p>
+    <p><strong>Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}</strong></p>
+  `;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'btn-remove';
+  removeBtn.textContent = 'Remover';
+  // Usa idx capturado pelo forEach — índice correto no array itens
+  removeBtn.onclick = (function(i) {
+    return function() { removeItem(i); };
+  })(idx);
+
+  itemDiv.appendChild(infoDiv);
+  itemDiv.appendChild(removeBtn);
+  itensList.appendChild(itemDiv);
+});
+
+// ✅ PREENCHER VALORES
+function formatarValor(val) {
+    if (!val && val !== 0) return '';
+    if (typeof val === 'number') return 'R$ ' + val.toFixed(2).replace('.', ',');
+    return val;
 }
+
+const precosPorSabor = {
+    'Amendoim': 1.00, 'Beijinho': 1.00, 'Brigadeiro': 1.00, 'Café': 1.00,
+    'Dois Amores': 1.00, 'Leite Ninho': 1.00, 'Moranguinho': 1.00, 'Sensação': 1.00,
+    'Chocolate Gourmet Branco': 1.20, 'Chocolate Gourmet Preto': 1.20, 'Confete': 1.20,
+    'Churros': 1.20, 'Ferrero Rocher': 1.20, 'Leite Ninho com Nutella': 1.20,
+    'Negresco': 1.20, 'Ovomaltine': 1.20, 'Prestígio': 1.20
+};
+let totalBrigadeiros = 0;
+itens.forEach(item => {
+    totalBrigadeiros += (precosPorSabor[item.sabor] || 1.00) * item.quantidade;
+});
+document.getElementById('valor').value = 'R$ ' + totalBrigadeiros.toFixed(2).replace('.', ',');
+document.getElementById('valorFrete').value = formatarValor(data.valorFrete || 0);
+document.getElementById('valorTotal').value = formatarValor(data.valorTotal || data.valor || data.valorBrigadeiros || 0);
+
+// Chama DEPOIS de preencher tudo
+setTimeout(function() { updateValorTotal(); }, 50);
         
         // Altera botão
         var btn = document.getElementById('sendWhatsApp');
@@ -1232,17 +1239,12 @@ function atualizarPedidoFirebase(key) {
         dados.valor = getFieldValue('valor');
         dados.valorFrete = getFieldValue('valorFrete');
         dados.valorTotal = getFieldValue('valorTotal');
+        dados.data = converterDataParaBR(getFieldValue('dataEntrega'));
+        dados.hora = getFieldValue('horarioEntrega');
+        dados.valorBrigadeiros = parseFloat(getFieldValue('valor').replace('R$ ', '').replace(',', '.')) || 0;
         
-        // Coleta itens (do HTML)
-        var itensEl = document.getElementById('itensList');
-        if (itensEl) {
-            var itemsDivs = itensEl.querySelectorAll('.item');
-            var itens = [];
-            itemsDivs.forEach(function(div) {
-                itens.push({ descricao: div.textContent });
-            });
-            dados.itens = itens;
-        }
+// Usa o array global itens (já populado corretamente)
+dados.itens = itens;
         
         console.log('Dados a salvar:', dados);
         
